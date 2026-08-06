@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:encrypt_shared_preferences/provider/client_encrypt_shared_preferences.dart';
+import 'package:encrypt_shared_preferences/provider.dart';
 import 'localization.dart';
 import 'pages/soccer_team_list_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await EncryptSharedPreferences.instance.init("secret_key_123456");
+  await EncryptedSharedPreferences.initialize("secret_key_123456");
   runApp(const MyApp());
 }
 

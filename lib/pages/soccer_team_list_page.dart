@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:encrypt_shared_preferences/provider/client_encrypt_shared_preferences.dart';
+import 'package:encrypt_shared_preferences/provider.dart';
 import '../database/database.dart';
 import '../models/team.dart';
 import '../dao/team_dao.dart';
@@ -30,7 +30,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
   final _cityController = TextEditingController();
   final _urlController = TextEditingController();
 
-  final _prefs = EncryptSharedPreferences.instance;
+  final _prefs = EncryptedSharedPreferences.getInstance();
 
   @override
   void initState() {
@@ -141,10 +141,10 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
   }
 
   Future<void> _loadFromPrefs() async {
-    final name = await _prefs.getString('last_name');
-    final stadium = await _prefs.getString('last_stadium');
-    final city = await _prefs.getString('last_city');
-    final url = await _prefs.getString('last_url');
+    final name = _prefs.getString('last_name');
+    final stadium = _prefs.getString('last_stadium');
+    final city = _prefs.getString('last_city');
+    final url = _prefs.getString('last_url');
 
     if (name != null) {
       _showCopyDialog(name, stadium ?? '', city ?? '', url ?? '');

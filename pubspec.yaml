@@ -33,7 +33,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   floor: ^1.5.0
   sqflite: ^2.3.0
-  encrypt_shared_preferences: ^0.2.2
+  encrypt_shared_preferences: ^1.0.1
   flutter_localizations:
     sdk: flutter
 
