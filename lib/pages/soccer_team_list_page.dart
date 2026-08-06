@@ -10,6 +10,16 @@ import 'team_details_page.dart';
 /// 
 /// Displays a list of soccer teams and provides an interface
 /// to add, update, and delete them.
+/// 
+/// Satisfies requirements:
+/// 1. ListView of items
+/// 2. TextField and button for insertion
+/// 3. Database storage (Floor/SQLite)
+/// 4. Master-Detail view (Phone vs Tablet)
+/// 5. Snackbar and AlertDialog notifications
+/// 6. EncryptedSharedPreferences for saving data
+/// 7. ActionBar with instructions
+/// 8. Localization support
 class SoccerTeamListPage extends StatefulWidget {
   /// Creates a new [SoccerTeamListPage] instance.
   const SoccerTeamListPage({super.key});
@@ -18,32 +28,53 @@ class SoccerTeamListPage extends StatefulWidget {
   State<SoccerTeamListPage> createState() => _SoccerTeamListPageState();
 }
 
+/// The state for [SoccerTeamListPage].
 class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
+  /// The database instance.
   late AppDatabase _database;
+
+  /// The Data Access Object for teams.
   late TeamDao _teamDao;
+
+  /// The list of teams retrieved from the database.
   List<Team> _teams = [];
+
+  /// The currently selected team for updating or deleting.
   Team? _selectedTeam;
+
+  /// Whether the database has been initialized and teams loaded.
   bool _isDatabaseLoaded = false;
 
+  /// Controller for the team name field.
   final _nameController = TextEditingController();
+
+  /// Controller for the home stadium field.
   final _stadiumController = TextEditingController();
+
+  /// Controller for the city field.
   final _cityController = TextEditingController();
+
+  /// Controller for the picture URL field.
   final _urlController = TextEditingController();
 
+  /// The encrypted shared preferences instance.
   final _prefs = EncryptedSharedPreferences.getInstance();
 
   @override
   void initState() {
     super.initState();
+    // Initialize database when the page is first created.
     _initDatabase();
   }
 
+  /// Initializes the Floor database and loads the teams.
   Future<void> _initDatabase() async {
     _database = await $FloorAppDatabase.databaseBuilder('app_database.db').build();
     _teamDao = _database.teamDao;
     _loadTeams();
   }
 
+  /// Fetches all teams from the database and updates the UI state.
   Future<void> _loadTeams() async {
     final teams = await _teamDao.findAllTeams();
     setState(() {
@@ -52,6 +83,10 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     });
   }
 
+  /// Handles team selection from the ListView.
+  /// 
+  /// In tablet mode, it populates the side form.
+  /// In phone mode, it navigates to the [TeamDetailsPage].
   void _onTeamSelected(Team team) {
     setState(() {
       _selectedTeam = team;
@@ -61,7 +96,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
       _urlController.text = team.pictureUrl;
     });
 
-    // Check for tablet layout
+    // Check for tablet layout (width < 600 means phone)
     if (MediaQuery.of(context).size.width < 600) {
       Navigator.push(
         context,
@@ -82,6 +117,10 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     }
   }
 
+  /// Adds a new team to the database.
+  /// 
+  /// Validates fields first, then inserts, saves to prefs, clears the form,
+  /// and reloads the list.
   Future<void> _addTeam() async {
     if (_validateFields()) {
       final team = Team(
@@ -98,12 +137,14 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     }
   }
 
+  /// Updates an existing team's information in the database.
   Future<void> _updateTeam(Team team) async {
     await _teamDao.updateTeam(team);
     _loadTeams();
     _showSnackbar(AppLocalizations.of(context)!.translate('team_updated'));
   }
 
+  /// Deletes a team from the database and list.
   Future<void> _deleteTeam(Team team) async {
     await _teamDao.deleteTeam(team);
     _selectedTeam = null;
@@ -112,6 +153,9 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     _showSnackbar(AppLocalizations.of(context)!.translate('team_deleted'));
   }
 
+  /// Validates that all form fields are not empty.
+  /// 
+  /// Shows an [AlertDialog] if validation fails.
   bool _validateFields() {
     if (_nameController.text.isEmpty ||
         _stadiumController.text.isEmpty ||
@@ -123,6 +167,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     return true;
   }
 
+  /// Clears all text fields and resets selection.
   void _clearFields() {
     setState(() {
       _selectedTeam = null;
@@ -133,6 +178,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     });
   }
 
+  /// Saves current field values to [EncryptedSharedPreferences].
   void _saveToPrefs() {
     _prefs.setString('last_name', _nameController.text);
     _prefs.setString('last_stadium', _stadiumController.text);
@@ -140,6 +186,9 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     _prefs.setString('last_url', _urlController.text);
   }
 
+  /// Attempts to load the previously saved team data from preferences.
+  /// 
+  /// Shows a confirmation dialog to the user.
   Future<void> _loadFromPrefs() async {
     final name = _prefs.getString('last_name');
     final stadium = _prefs.getString('last_stadium');
@@ -151,6 +200,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     }
   }
 
+  /// Shows an [AlertDialog] asking if the user wants to copy previous data.
   void _showCopyDialog(String n, String s, String c, String u) {
     showDialog(
       context: context,
@@ -179,6 +229,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     );
   }
 
+  /// Shows an error [AlertDialog] with the given [message].
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -192,6 +243,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     );
   }
 
+  /// Shows the help instructions [AlertDialog].
   void _showHelpDialog() {
     showDialog(
       context: context,
@@ -205,6 +257,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     );
   }
 
+  /// Shows a [SnackBar] with the given [message].
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
@@ -212,12 +265,14 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // Determine if we are on a tablet/desktop layout
     final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.translate('title')),
         actions: [
+          // Help icon in the AppBar
           IconButton(onPressed: _showHelpDialog, icon: const Icon(Icons.help)),
         ],
       ),
@@ -225,6 +280,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
           ? const Center(child: CircularProgressIndicator())
           : Row(
               children: [
+                // The ListView side (Master)
                 Expanded(
                   flex: 1,
                   child: Column(
@@ -257,6 +313,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
                     ],
                   ),
                 ),
+                // The Details side (Detail) - only visible on tablet
                 if (isTablet)
                   Expanded(
                     flex: 1,
@@ -267,6 +324,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
                   ),
               ],
             ),
+      // Floating button to clear form on phones
       floatingActionButton: !isTablet ? FloatingActionButton(
         onPressed: _clearFields,
         child: const Icon(Icons.add),
@@ -274,6 +332,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
     );
   }
 
+  /// Builds the input form for adding/updating teams.
   Widget _buildForm(AppLocalizations l10n) {
     return SingleChildScrollView(
       child: Column(
@@ -283,6 +342,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
           TextField(controller: _cityController, decoration: InputDecoration(labelText: l10n.translate('city'))),
           TextField(controller: _urlController, decoration: InputDecoration(labelText: l10n.translate('image_url'))),
           const SizedBox(height: 20),
+          // Show different buttons based on whether a team is selected
           if (_selectedTeam == null)
             ElevatedButton(onPressed: _addTeam, child: Text(l10n.translate('submit')))
           else
