@@ -74,6 +74,8 @@ class _$AppDatabase extends AppDatabase {
 
   TeamDao? _teamDaoInstance;
 
+  PlayerDao? _playerDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
@@ -97,6 +99,8 @@ class _$AppDatabase extends AppDatabase {
       onCreate: (database, version) async {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Team` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `homeStadium` TEXT NOT NULL, `city` TEXT NOT NULL, `pictureUrl` TEXT NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `Player` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `address` TEXT NOT NULL, `dateOfBirth` TEXT NOT NULL, `teamId` INTEGER NOT NULL)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -107,6 +111,11 @@ class _$AppDatabase extends AppDatabase {
   @override
   TeamDao get teamDao {
     return _teamDaoInstance ??= _$TeamDao(database, changeListener);
+  }
+
+  @override
+  PlayerDao get playerDao {
+    return _playerDaoInstance ??= _$PlayerDao(database, changeListener);
   }
 }
 
@@ -196,5 +205,99 @@ class _$TeamDao extends TeamDao {
   @override
   Future<void> deleteTeam(Team team) async {
     await _teamDeletionAdapter.delete(team);
+  }
+}
+
+class _$PlayerDao extends PlayerDao {
+  _$PlayerDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _playerInsertionAdapter = InsertionAdapter(
+            database,
+            'Player',
+            (Player item) => <String, Object?>{
+                  'id': item.id,
+                  'firstName': item.firstName,
+                  'lastName': item.lastName,
+                  'address': item.address,
+                  'dateOfBirth': item.dateOfBirth,
+                  'teamId': item.teamId
+                }),
+        _playerUpdateAdapter = UpdateAdapter(
+            database,
+            'Player',
+            ['id'],
+            (Player item) => <String, Object?>{
+                  'id': item.id,
+                  'firstName': item.firstName,
+                  'lastName': item.lastName,
+                  'address': item.address,
+                  'dateOfBirth': item.dateOfBirth,
+                  'teamId': item.teamId
+                }),
+        _playerDeletionAdapter = DeletionAdapter(
+            database,
+            'Player',
+            ['id'],
+            (Player item) => <String, Object?>{
+                  'id': item.id,
+                  'firstName': item.firstName,
+                  'lastName': item.lastName,
+                  'address': item.address,
+                  'dateOfBirth': item.dateOfBirth,
+                  'teamId': item.teamId
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<Player> _playerInsertionAdapter;
+
+  final UpdateAdapter<Player> _playerUpdateAdapter;
+
+  final DeletionAdapter<Player> _playerDeletionAdapter;
+
+  @override
+  Future<List<Player>> findAllPlayers() async {
+    return _queryAdapter.queryList('SELECT * FROM Player',
+        mapper: (Map<String, Object?> row) => Player(
+            id: row['id'] as int?,
+            firstName: row['firstName'] as String,
+            lastName: row['lastName'] as String,
+            address: row['address'] as String,
+            dateOfBirth: row['dateOfBirth'] as String,
+            teamId: row['teamId'] as int));
+  }
+
+  @override
+  Future<Player?> findPlayerById(int id) async {
+    return _queryAdapter.query('SELECT * FROM Player WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => Player(
+            id: row['id'] as int?,
+            firstName: row['firstName'] as String,
+            lastName: row['lastName'] as String,
+            address: row['address'] as String,
+            dateOfBirth: row['dateOfBirth'] as String,
+            teamId: row['teamId'] as int),
+        arguments: [id]);
+  }
+
+  @override
+  Future<void> insertPlayer(Player player) async {
+    await _playerInsertionAdapter.insert(player, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updatePlayer(Player player) async {
+    await _playerUpdateAdapter.update(player, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> deletePlayer(Player player) async {
+    await _playerDeletionAdapter.delete(player);
   }
 }

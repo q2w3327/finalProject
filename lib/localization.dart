@@ -24,6 +24,10 @@ class AppLocalizations {
   /// Internal map containing the translated strings for each supported locale.
   static const _localizedValues = {
     'en_US': {
+      'home_player_button': 'Soccer Player Page',
+      'home_team_button': 'Soccer Team List Page',
+      'home_game_button': 'Soccer Game List Page',
+      'app_title': 'Final Project - Soccer',
       'title': 'Soccer Team List',
       'add_team': 'Add Team',
       'team_name': 'Team Name',
@@ -43,27 +47,53 @@ class AppLocalizations {
       'team_updated': 'Team updated successfully',
       'team_deleted': 'Team deleted successfully',
       'color': 'Color',
+      'player_title': 'Soccer Player List',
+      'add_player': 'Add Player',
+      'first_name': 'First Name',
+      'last_name': 'Last Name',
+      'address': 'Address',
+      'date_of_birth': 'Date of Birth',
+      'team_id': 'Team ID',
+      'copy_previous_player': 'Copy from previous player?',
+      'player_added': 'Player added successfully',
+      'player_updated': 'Player updated successfully',
+      'player_deleted': 'Player deleted successfully',
     },
-    'en_GB': {
-      'title': 'Soccer Team List',
-      'add_team': 'Add Team',
-      'team_name': 'Team Name',
-      'stadium': 'Home Stadium',
-      'city': 'City',
-      'image_url': 'Image URL (http://)',
-      'submit': 'Submit',
-      'update': 'Update',
-      'delete': 'Delete',
-      'copy_previous': 'Copy from previous?',
-      'yes': 'Yes',
-      'no': 'No',
-      'help': 'Help Instructions',
-      'help_text': 'Use the form to add a new team. Click on a team in the list to update or delete it. You can copy details from the last added team.',
-      'error_fields': 'Please fill all fields',
-      'team_added': 'Team added successfully',
-      'team_updated': 'Team updated successfully',
-      'team_deleted': 'Team deleted successfully',
-      'color': 'Colour',
+    'fr_FR': {
+      'home_player_button': 'Page des joueurs',
+      'home_team_button': 'Page des équipes',
+      'home_game_button': 'Page des matchs',
+      'app_title': 'Projet final - Football',
+      'title': 'Liste des équipes de football',
+      'add_team': 'Ajouter une équipe',
+      'team_name': "Nom de l'équipe",
+      'stadium': 'Stade',
+      'city': 'Ville',
+      'image_url': "URL de l'image (http://)",
+      'submit': 'Soumettre',
+      'update': 'Mettre à jour',
+      'delete': 'Supprimer',
+      'copy_previous': 'Copier depuis le précédent ?',
+      'yes': 'Oui',
+      'no': 'Non',
+      'help': "Instructions d'aide",
+      'help_text': "Utilisez le formulaire pour ajouter une nouvelle équipe. Cliquez sur une équipe dans la liste pour la modifier ou la supprimer. Vous pouvez copier les informations de la dernière équipe ajoutée.",
+      'error_fields': 'Veuillez remplir tous les champs',
+      'team_added': 'Équipe ajoutée avec succès',
+      'team_updated': 'Équipe mise à jour avec succès',
+      'team_deleted': 'Équipe supprimée avec succès',
+      'color': 'Couleur',
+      'player_title': 'Liste des joueurs de football',
+      'add_player': 'Ajouter un joueur',
+      'first_name': 'Prénom',
+      'last_name': 'Nom de famille',
+      'address': 'Adresse',
+      'date_of_birth': 'Date de naissance',
+      'team_id': "ID de l'équipe",
+      'copy_previous_player': 'Copier depuis le joueur précédent ?',
+      'player_added': 'Joueur ajouté avec succès',
+      'player_updated': 'Joueur mis à jour avec succès',
+      'player_deleted': 'Joueur supprimé avec succès',
     },
   };
 
@@ -89,7 +119,7 @@ class AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
 
   /// Checks if the provided [locale] is supported by this delegate.
   @override
-  bool isSupported(Locale locale) => ['en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => ['en', 'fr'].contains(locale.languageCode);
 
   /// Loads the [AppLocalizations] for the given [locale].
   @override

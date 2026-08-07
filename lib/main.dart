@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:encrypt_shared_preferences/provider.dart';
 import 'localization.dart';
 import 'pages/soccer_team_list_page.dart';
+import 'pages/soccer_player_list_page.dart';
 
 /// The entry point of the application.
 /// 
@@ -65,7 +66,7 @@ class _MyAppState extends State<MyApp> {
       // List the supported locales for the app.
       supportedLocales: const [
         Locale('en', 'US'),
-        Locale('en', 'GB'),
+        Locale('fr', 'FR'),
       ],
       // The initial page shown to the user.
       home: MainLandingPage(onChangeLanguage: changeLanguage),
@@ -85,9 +86,10 @@ class MainLandingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Final Project - Soccer'),
+        title: Text(l10n.translate('app_title')),
         actions: [
           // Language selector in the AppBar.
           PopupMenuButton<Locale>(
@@ -98,8 +100,8 @@ class MainLandingPage extends StatelessWidget {
                 child: Text('English (US)'),
               ),
               const PopupMenuItem(
-                value: Locale('en', 'GB'),
-                child: Text('English (UK)'),
+                value: Locale('fr', 'FR'),
+                child: Text('Français'),
               ),
             ],
             icon: const Icon(Icons.language),
@@ -110,10 +112,15 @@ class MainLandingPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Button for the Soccer Player Page (Placeholder).
+            // Button for the Soccer Player Page.
             ElevatedButton(
-              onPressed: () {},
-              child: const Text('Soccer Player Page'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SoccerPlayerListPage()),
+                );
+              },
+              child: Text(l10n.translate('home_player_button')),
             ),
             const SizedBox(height: 10),
             // Button to navigate to the Soccer Team List Page.
@@ -124,19 +131,13 @@ class MainLandingPage extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const SoccerTeamListPage()),
                 );
               },
-              child: const Text('Soccer Team List Page'),
+              child: Text(l10n.translate('home_team_button')),
             ),
             const SizedBox(height: 10),
             // Button for the Soccer Game List Page (Placeholder).
             ElevatedButton(
               onPressed: () {},
-              child: const Text('Soccer Game List Page'),
-            ),
-            const SizedBox(height: 10),
-            // Button for the Stadium List Page (Placeholder).
-            ElevatedButton(
-              onPressed: () {},
-              child: const Text('Stadium List Page'),
+              child: Text(l10n.translate('home_game_button')),
             ),
           ],
         ),
