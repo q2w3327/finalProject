@@ -2,26 +2,31 @@ import 'package:flutter/material.dart';
 import '../models/player.dart';
 import '../localization.dart';
 
-/// Page to display and edit details of a [Player] on phone screens.
+/// Page to display and edit details of a [Player] on phone screens,
+/// or to add a new player when [player] is null.
 ///
 /// This page is used in phone layouts to provide the "Detail" view
-/// of the Master-Detail pattern.
+/// of the Master-Detail pattern, as well as the "add new player" flow.
 class PlayerDetailsPage extends StatefulWidget {
-  /// The player to display details for.
-  final Player player;
+  /// The player to display details for. Null means "add new player" mode.
+  final Player? player;
+
+  /// Callback function when a new player is added.
+  final Function(Player)? onAdd;
 
   /// Callback function when the player is updated.
-  final Function(Player) onUpdate;
+  final Function(Player)? onUpdate;
 
   /// Callback function when the player is deleted.
-  final Function(Player) onDelete;
+  final Function(Player)? onDelete;
 
   /// Creates a new [PlayerDetailsPage] instance.
   const PlayerDetailsPage({
     super.key,
-    required this.player,
-    required this.onUpdate,
-    required this.onDelete,
+    this.player,
+    this.onAdd,
+    this.onUpdate,
+    this.onDelete,
   });
 
   @override
@@ -45,15 +50,18 @@ class _PlayerDetailsPageState extends State<PlayerDetailsPage> {
   /// Controller for the team ID field.
   late TextEditingController _teamIdController;
 
+  /// Whether this page is in "add new" mode (true) or "edit existing" mode (false).
+  bool get _isAddMode => widget.player == null;
+
   @override
   void initState() {
     super.initState();
-    // Pre-populate controllers with the player's current data.
-    _firstNameController = TextEditingController(text: widget.player.firstName);
-    _lastNameController = TextEditingController(text: widget.player.lastName);
-    _addressController = TextEditingController(text: widget.player.address);
-    _dobController = TextEditingController(text: widget.player.dateOfBirth);
-    _teamIdController = TextEditingController(text: widget.player.teamId.toString());
+    // Pre-populate controllers with the player's current data, or blank if adding.
+    _firstNameController = TextEditingController(text: widget.player?.firstName ?? '');
+    _lastNameController = TextEditingController(text: widget.player?.lastName ?? '');
+    _addressController = TextEditingController(text: widget.player?.address ?? '');
+    _dobController = TextEditingController(text: widget.player?.dateOfBirth ?? '');
+    _teamIdController = TextEditingController(text: widget.player?.teamId.toString() ?? '');
   }
 
   @override
@@ -67,14 +75,42 @@ class _PlayerDetailsPageState extends State<PlayerDetailsPage> {
     super.dispose();
   }
 
+  /// Validates that all fields are filled and the team ID is a valid number.
+  ///
+  /// Shows an [AlertDialog] if validation fails.
+  bool _validateFields() {
+    final isValid = _firstNameController.text.isNotEmpty &&
+        _lastNameController.text.isNotEmpty &&
+        _addressController.text.isNotEmpty &&
+        _dobController.text.isNotEmpty &&
+        int.tryParse(_teamIdController.text) != null;
+
+    if (!isValid) {
+      final l10n = AppLocalizations.of(context)!;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(l10n.translate('error_fields')),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
+          ],
+        ),
+      );
+    }
+    return isValid;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        // Show the player's full name in the title.
-        title: Text('${widget.player.firstName} ${widget.player.lastName}'),
+        // Show "Add Player" title when adding, or the player's name when editing.
+        title: Text(_isAddMode
+            ? l10n.translate('add_player')
+            : '${widget.player!.firstName} ${widget.player!.lastName}'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -103,34 +139,53 @@ class _PlayerDetailsPageState extends State<PlayerDetailsPage> {
                 decoration: InputDecoration(labelText: l10n.translate('team_id')),
               ),
               const SizedBox(height: 20),
-              // Actions row for Update and Delete
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      final updated = Player(
-                        id: widget.player.id,
+              // Show Submit button in add mode, or Update/Delete in edit mode.
+              if (_isAddMode)
+                ElevatedButton(
+                  onPressed: () {
+                    if (_validateFields()) {
+                      final newPlayer = Player(
                         firstName: _firstNameController.text,
                         lastName: _lastNameController.text,
                         address: _addressController.text,
                         dateOfBirth: _dobController.text,
-                        teamId: int.tryParse(_teamIdController.text) ?? widget.player.teamId,
+                        teamId: int.tryParse(_teamIdController.text) ?? 0,
                       );
-                      widget.onUpdate(updated);
-                    },
-                    child: Text(l10n.translate('update')),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => widget.onDelete(widget.player),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
+                      widget.onAdd?.call(newPlayer);
+                    }
+                  },
+                  child: Text(l10n.translate('submit')),
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_validateFields()) {
+                          final updated = Player(
+                            id: widget.player!.id,
+                            firstName: _firstNameController.text,
+                            lastName: _lastNameController.text,
+                            address: _addressController.text,
+                            dateOfBirth: _dobController.text,
+                            teamId: int.tryParse(_teamIdController.text) ?? widget.player!.teamId,
+                          );
+                          widget.onUpdate?.call(updated);
+                        }
+                      },
+                      child: Text(l10n.translate('update')),
                     ),
-                    child: Text(l10n.translate('delete')),
-                  ),
-                ],
-              ),
+                    ElevatedButton(
+                      onPressed: () => widget.onDelete?.call(widget.player!),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text(l10n.translate('delete')),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),

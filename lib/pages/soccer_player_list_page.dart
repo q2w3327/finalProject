@@ -86,10 +86,13 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
     });
   }
 
+  /// Determines whether the current layout is phone-sized.
+  bool _isPhone() => MediaQuery.of(context).size.width < 600;
+
   /// Handles player selection from the ListView.
   ///
   /// In tablet mode, it populates the side form.
-  /// In phone mode, it navigates to the [PlayerDetailsPage].
+  /// In phone mode, it navigates to the [PlayerDetailsPage] in edit mode.
   void _onPlayerSelected(Player player) {
     setState(() {
       _selectedPlayer = player;
@@ -100,8 +103,7 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
       _teamIdController.text = player.teamId.toString();
     });
 
-    // Check for tablet layout (width < 600 means phone)
-    if (MediaQuery.of(context).size.width < 600) {
+    if (_isPhone()) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -121,7 +123,31 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
     }
   }
 
-  /// Adds a new player to the database.
+  /// Navigates to the add-player page (phone mode) or clears the form (tablet mode).
+  void _goToAddPlayer() {
+    if (_isPhone()) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PlayerDetailsPage(
+            onAdd: (newPlayer) async {
+              await _playerDao.insertPlayer(newPlayer);
+              _saveToPrefsFrom(newPlayer);
+              await _loadPlayers();
+              if (mounted) {
+                Navigator.pop(context);
+                _showSnackbar(AppLocalizations.of(context)!.translate('player_added'));
+              }
+            },
+          ),
+        ),
+      );
+    } else {
+      _clearFields();
+    }
+  }
+
+  /// Adds a new player to the database from the tablet-mode inline form.
   ///
   /// Validates fields first, then inserts, saves to prefs, clears the form,
   /// and reloads the list.
@@ -195,12 +221,24 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
     _prefs.setString('last_team_id', _teamIdController.text);
   }
 
+  /// Saves the given [player]'s fields to [EncryptedSharedPreferences].
+  ///
+  /// Used when a player is added from the phone-mode add page.
+  void _saveToPrefsFrom(Player player) {
+    _prefs.setString('last_first_name', player.firstName);
+    _prefs.setString('last_last_name', player.lastName);
+    _prefs.setString('last_address', player.address);
+    _prefs.setString('last_dob', player.dateOfBirth);
+    _prefs.setString('last_team_id', player.teamId.toString());
+  }
+
   /// Attempts to load the previously saved player data from preferences.
   ///
-  /// Shows a confirmation dialog to the user.
+  /// Shows a confirmation dialog to the user. Used in tablet mode.
   Future<void> _loadFromPrefs() async {
     // Reset the form to blank "add" mode first.
     _clearFields();
+
     final firstName = _prefs.getString('last_first_name');
     final lastName = _prefs.getString('last_last_name');
     final address = _prefs.getString('last_address');
@@ -303,7 +341,13 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
                   child: Row(
                     children: [
                       ElevatedButton(
-                        onPressed: _loadFromPrefs,
+                        onPressed: () {
+                          if (_isPhone()) {
+                            _goToAddPlayer();
+                          } else {
+                            _loadFromPrefs();
+                          }
+                        },
                         child: Text(l10n.translate('add_player')),
                       ),
                     ],
@@ -337,17 +381,17 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
             ),
         ],
       ),
-      // Floating button to clear form on phones
+      // Floating button to add a new player on phones
       floatingActionButton: !isTablet
           ? FloatingActionButton(
-        onPressed: _clearFields,
+        onPressed: _goToAddPlayer,
         child: const Icon(Icons.add),
       )
           : null,
     );
   }
 
-  /// Builds the input form for adding/updating players.
+  /// Builds the input form for adding/updating players (tablet/desktop mode).
   Widget _buildForm(AppLocalizations l10n) {
     return SingleChildScrollView(
       child: Column(
