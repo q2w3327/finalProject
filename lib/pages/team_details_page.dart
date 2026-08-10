@@ -3,20 +3,11 @@ import '../models/team.dart';
 import '../localization.dart';
 
 /// Page to display and edit details of a [Team] on phone screens.
-/// 
-/// This page is used in phone layouts to provide the "Detail" view
-/// of the Master-Detail pattern.
 class TeamDetailsPage extends StatefulWidget {
-  /// The team to display details for.
   final Team team;
-
-  /// Callback function when the team is updated.
   final Function(Team) onUpdate;
-
-  /// Callback function when the team is deleted.
   final Function(Team) onDelete;
 
-  /// Creates a new [TeamDetailsPage] instance.
   const TeamDetailsPage({
     super.key,
     required this.team,
@@ -28,24 +19,15 @@ class TeamDetailsPage extends StatefulWidget {
   State<TeamDetailsPage> createState() => _TeamDetailsPageState();
 }
 
-/// The state for [TeamDetailsPage].
 class _TeamDetailsPageState extends State<TeamDetailsPage> {
-  /// Controller for the team name field.
   late TextEditingController _nameController;
-
-  /// Controller for the home stadium field.
   late TextEditingController _stadiumController;
-
-  /// Controller for the city field.
   late TextEditingController _cityController;
-
-  /// Controller for the picture URL field.
   late TextEditingController _urlController;
 
   @override
   void initState() {
     super.initState();
-    // Pre-populate controllers with the team's current data.
     _nameController = TextEditingController(text: widget.team.name);
     _stadiumController = TextEditingController(text: widget.team.homeStadium);
     _cityController = TextEditingController(text: widget.team.city);
@@ -54,7 +36,6 @@ class _TeamDetailsPageState extends State<TeamDetailsPage> {
 
   @override
   void dispose() {
-    // Dispose controllers to free up resources.
     _nameController.dispose();
     _stadiumController.dispose();
     _cityController.dispose();
@@ -67,40 +48,39 @@ class _TeamDetailsPageState extends State<TeamDetailsPage> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        // Show the team name in the title.
-        title: Text(widget.team.name),
-      ),
+      appBar: AppBar(title: Text(widget.team.name)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Display team image if URL is valid
-              if (widget.team.pictureUrl.startsWith('http'))
-                Image.network(
-                  widget.team.pictureUrl,
-                  height: 200,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 100),
-                ),
-              TextField(
-                controller: _nameController, 
-                decoration: InputDecoration(labelText: l10n.translate('team_name'))
+              // Enhanced Image loading with fallback for bad URLs
+              Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+                child: widget.team.pictureUrl.startsWith('http')
+                    ? Image.network(
+                        widget.team.pictureUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                              Text("Invalid Image URL", style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      )
+                    : const Center(child: Icon(Icons.image, size: 50, color: Colors.grey)),
               ),
-              TextField(
-                controller: _stadiumController, 
-                decoration: InputDecoration(labelText: l10n.translate('stadium'))
-              ),
-              TextField(
-                controller: _cityController, 
-                decoration: InputDecoration(labelText: l10n.translate('city'))
-              ),
-              TextField(
-                controller: _urlController, 
-                decoration: InputDecoration(labelText: l10n.translate('image_url'))
-              ),
+              const SizedBox(height: 16),
+              TextField(controller: _nameController, decoration: InputDecoration(labelText: l10n.translate('team_name'))),
+              TextField(controller: _stadiumController, decoration: InputDecoration(labelText: l10n.translate('stadium'))),
+              TextField(controller: _cityController, decoration: InputDecoration(labelText: l10n.translate('city'))),
+              TextField(controller: _urlController, decoration: InputDecoration(labelText: l10n.translate('image_url'))),
               const SizedBox(height: 20),
-              // Actions row for Update and Delete
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -119,10 +99,7 @@ class _TeamDetailsPageState extends State<TeamDetailsPage> {
                   ),
                   ElevatedButton(
                     onPressed: () => widget.onDelete(widget.team),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red, 
-                      foregroundColor: Colors.white
-                    ),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                     child: Text(l10n.translate('delete')),
                   ),
                 ],
