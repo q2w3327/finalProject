@@ -59,19 +59,43 @@ class _TeamDetailsPageState extends State<TeamDetailsPage> {
                 height: 200,
                 width: double.infinity,
                 decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
-                child: widget.team.pictureUrl.startsWith('http')
+                child: widget.team.pictureUrl.trim().startsWith('http')
                     ? Image.network(
-                        widget.team.pictureUrl,
+                        widget.team.pictureUrl.trim(),
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.broken_image, size: 50, color: Colors.grey),
-                              Text("Invalid Image URL", style: TextStyle(color: Colors.grey)),
-                            ],
-                          ),
-                        ),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          debugPrint('Image Load Error: $error');
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                                Text("Invalid Image URL", style: const TextStyle(color: Colors.grey)),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                  child: Text(
+                                    widget.team.pictureUrl,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       )
                     : const Center(child: Icon(Icons.image, size: 50, color: Colors.grey)),
               ),

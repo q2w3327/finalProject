@@ -81,10 +81,10 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
   Future<void> _addTeam() async {
     if (_validateFields()) {
       final team = Team(
-        name: _nameController.text,
-        homeStadium: _stadiumController.text,
-        city: _cityController.text,
-        pictureUrl: _urlController.text,
+        name: _nameController.text.trim(),
+        homeStadium: _stadiumController.text.trim(),
+        city: _cityController.text.trim(),
+        pictureUrl: _urlController.text.trim(),
       );
       await _teamDao.insertTeam(team);
       _saveToPrefs();
@@ -287,10 +287,10 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
                                     if (_validateFields()) {
                                       final updated = Team(
                                         id: _selectedTeam!.id,
-                                        name: _nameController.text,
-                                        homeStadium: _stadiumController.text,
-                                        city: _cityController.text,
-                                        pictureUrl: _urlController.text,
+                                        name: _nameController.text.trim(),
+                                        homeStadium: _stadiumController.text.trim(),
+                                        city: _cityController.text.trim(),
+                                        pictureUrl: _urlController.text.trim(),
                                       );
                                       _updateTeam(updated);
                                     }
