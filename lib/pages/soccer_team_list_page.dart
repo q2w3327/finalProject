@@ -28,6 +28,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
 
   final _prefs = EncryptedSharedPreferences.getInstance();
 
+  // Used for reloading teams after modifications.
   @override
   void initState() {
     super.initState();
