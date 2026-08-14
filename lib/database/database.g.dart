@@ -76,6 +76,8 @@ class _$AppDatabase extends AppDatabase {
 
   PlayerDao? _playerDaoInstance;
 
+  GameDao? _gameDaoInstance;
+
   Future<sqflite.Database> open(
     String path,
     List<Migration> migrations, [
@@ -101,6 +103,8 @@ class _$AppDatabase extends AppDatabase {
             'CREATE TABLE IF NOT EXISTS `Team` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `homeStadium` TEXT NOT NULL, `city` TEXT NOT NULL, `pictureUrl` TEXT NOT NULL)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Player` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `address` TEXT NOT NULL, `dateOfBirth` TEXT NOT NULL, `teamId` INTEGER NOT NULL)');
+        await database.execute(
+            'CREATE TABLE IF NOT EXISTS `Game` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `date` TEXT NOT NULL, `stadiumId` INTEGER NOT NULL, `team1Id` INTEGER NOT NULL, `team2Id` INTEGER NOT NULL)');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -116,6 +120,11 @@ class _$AppDatabase extends AppDatabase {
   @override
   PlayerDao get playerDao {
     return _playerDaoInstance ??= _$PlayerDao(database, changeListener);
+  }
+
+  @override
+  GameDao get gameDao {
+    return _gameDaoInstance ??= _$GameDao(database, changeListener);
   }
 }
 
@@ -299,5 +308,94 @@ class _$PlayerDao extends PlayerDao {
   @override
   Future<void> deletePlayer(Player player) async {
     await _playerDeletionAdapter.delete(player);
+  }
+}
+
+class _$GameDao extends GameDao {
+  _$GameDao(
+    this.database,
+    this.changeListener,
+  )   : _queryAdapter = QueryAdapter(database),
+        _gameInsertionAdapter = InsertionAdapter(
+            database,
+            'Game',
+            (Game item) => <String, Object?>{
+                  'id': item.id,
+                  'date': item.date,
+                  'stadiumId': item.stadiumId,
+                  'team1Id': item.team1Id,
+                  'team2Id': item.team2Id
+                }),
+        _gameUpdateAdapter = UpdateAdapter(
+            database,
+            'Game',
+            ['id'],
+            (Game item) => <String, Object?>{
+                  'id': item.id,
+                  'date': item.date,
+                  'stadiumId': item.stadiumId,
+                  'team1Id': item.team1Id,
+                  'team2Id': item.team2Id
+                }),
+        _gameDeletionAdapter = DeletionAdapter(
+            database,
+            'Game',
+            ['id'],
+            (Game item) => <String, Object?>{
+                  'id': item.id,
+                  'date': item.date,
+                  'stadiumId': item.stadiumId,
+                  'team1Id': item.team1Id,
+                  'team2Id': item.team2Id
+                });
+
+  final sqflite.DatabaseExecutor database;
+
+  final StreamController<String> changeListener;
+
+  final QueryAdapter _queryAdapter;
+
+  final InsertionAdapter<Game> _gameInsertionAdapter;
+
+  final UpdateAdapter<Game> _gameUpdateAdapter;
+
+  final DeletionAdapter<Game> _gameDeletionAdapter;
+
+  @override
+  Future<List<Game>> findAllGames() async {
+    return _queryAdapter.queryList('SELECT * FROM Game',
+        mapper: (Map<String, Object?> row) => Game(
+            id: row['id'] as int?,
+            date: row['date'] as String,
+            stadiumId: row['stadiumId'] as int,
+            team1Id: row['team1Id'] as int,
+            team2Id: row['team2Id'] as int));
+  }
+
+  @override
+  Future<Game?> findGameById(int id) async {
+    return _queryAdapter.query('SELECT * FROM Game WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => Game(
+            id: row['id'] as int?,
+            date: row['date'] as String,
+            stadiumId: row['stadiumId'] as int,
+            team1Id: row['team1Id'] as int,
+            team2Id: row['team2Id'] as int),
+        arguments: [id]);
+  }
+
+  @override
+  Future<void> insertGame(Game game) async {
+    await _gameInsertionAdapter.insert(game, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> updateGame(Game game) async {
+    await _gameUpdateAdapter.update(game, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> deleteGame(Game game) async {
+    await _gameDeletionAdapter.delete(game);
   }
 }

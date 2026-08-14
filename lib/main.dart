@@ -4,6 +4,7 @@ import 'package:encrypt_shared_preferences/provider.dart';
 import 'localization.dart';
 import 'pages/soccer_team_list_page.dart';
 import 'pages/soccer_player_list_page.dart';
+import 'pages/soccer_game_list_page.dart';
 
 /// The entry point of the application.
 /// 
@@ -135,9 +136,14 @@ class MainLandingPage extends StatelessWidget {
               child: Text(l10n.translate('home_team_button')),
             ),
             const SizedBox(height: 10),
-            // Button for the Soccer Game List Page (Placeholder).
+            // Button for the Soccer Game List Page.
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SoccerGameListPage()),
+                );
+              },
               child: Text(l10n.translate('home_game_button')),
             ),
           ],
