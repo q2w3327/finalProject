@@ -15,7 +15,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize the encrypted preferences with a secret key for security.
-  await EncryptedSharedPreferences.initialize("secret_key_123456");
+  await EncryptedSharedPreferences.initialize("secret_key_12345");
   
   runApp(const MyApp());
 }
