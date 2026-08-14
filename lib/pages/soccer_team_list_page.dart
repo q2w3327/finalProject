@@ -54,7 +54,8 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
       _selectedTeam = team;
     });
 
-    if (MediaQuery.of(context).size.width < 600) {
+    // Check if we are in "Mobile Mode" (width < 900)
+    if (MediaQuery.of(context).size.width < 900) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -72,6 +73,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
         ),
       );
     } else {
+      // Tablet Mode: Populate side form
       _nameController.text = team.name;
       _stadiumController.text = team.homeStadium;
       _cityController.text = team.city;
