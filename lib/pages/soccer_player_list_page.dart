@@ -68,6 +68,31 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
     super.initState();
     // Initialize database when the page is first created.
     _initDatabase();
+
+    // Load draft data from encrypted shared preferences if it exists.
+    _firstNameController.text = _prefs.getString('draft_firstName') ?? '';
+    _lastNameController.text = _prefs.getString('draft_lastName') ?? '';
+    _addressController.text = _prefs.getString('draft_address') ?? '';
+    _dobController.text = _prefs.getString('draft_dob') ?? '';
+    _teamIdController.text = _prefs.getString('draft_teamId') ?? '';
+
+    // Add listeners to save changes to encrypted shared preferences as the user types.
+    // Only save to draft if we are in "add new" mode (no player selected in tablet form).
+    _firstNameController.addListener(() {
+      if (_selectedPlayer == null) _prefs.setString('draft_firstName', _firstNameController.text);
+    });
+    _lastNameController.addListener(() {
+      if (_selectedPlayer == null) _prefs.setString('draft_lastName', _lastNameController.text);
+    });
+    _addressController.addListener(() {
+      if (_selectedPlayer == null) _prefs.setString('draft_address', _addressController.text);
+    });
+    _dobController.addListener(() {
+      if (_selectedPlayer == null) _prefs.setString('draft_dob', _dobController.text);
+    });
+    _teamIdController.addListener(() {
+      if (_selectedPlayer == null) _prefs.setString('draft_teamId', _teamIdController.text);
+    });
   }
 
   /// Initializes the Floor database and loads the players.
@@ -124,18 +149,31 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
   }
 
   /// Navigates to the add-player page (phone mode) or clears the form (tablet mode).
-  void _goToAddPlayer() {
+  ///
+  /// In phone mode, checks for previously saved data first and asks the user
+  /// whether to pre-fill the new form with it.
+  Future<void> _goToAddPlayer() async {
     if (_isPhone()) {
+      final prefillPlayer = await _confirmCopyFromPrefs();
+      if (!mounted) return;
+
+      // If the user says "No" to copying previous data, clear the draft
+      // to ensure the form starts fresh as requested.
+      if (prefillPlayer == null) {
+        _clearDraft();
+      }
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PlayerDetailsPage(
+          builder: (innerContext) => PlayerDetailsPage(
+            prefillData: prefillPlayer,
             onAdd: (newPlayer) async {
               await _playerDao.insertPlayer(newPlayer);
               _saveToPrefsFrom(newPlayer);
               await _loadPlayers();
               if (mounted) {
-                Navigator.pop(context);
+                Navigator.of(context).pop();
                 _showSnackbar(AppLocalizations.of(context)!.translate('player_added'));
               }
             },
@@ -144,7 +182,61 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
       );
     } else {
       _clearFields();
+      _clearDraft(); // Also clear draft when manually starting new in tablet mode
     }
+  }
+
+  /// Checks EncryptedSharedPreferences for previously saved player data.
+  ///
+  /// If data exists, shows a confirmation dialog asking the user whether to
+  /// copy it into the new form. Returns a [Player] built from the saved data
+  /// if the user confirms, or null otherwise.
+  Future<Player?> _confirmCopyFromPrefs() async {
+    final firstName = _prefs.getString('last_first_name');
+    if (firstName == null) return null;
+
+    final lastName = _prefs.getString('last_last_name') ?? '';
+    final address = _prefs.getString('last_address') ?? '';
+    final dob = _prefs.getString('last_dob') ?? '';
+    final teamId = _prefs.getString('last_team_id') ?? '';
+
+    final shouldCopy = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(AppLocalizations.of(context)!.translate('copy_previous_player')),
+        content: Text('$firstName $lastName'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(AppLocalizations.of(context)!.translate('no')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(AppLocalizations.of(context)!.translate('yes')),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldCopy == true) {
+      return Player(
+        firstName: firstName,
+        lastName: lastName,
+        address: address,
+        dateOfBirth: dob,
+        teamId: int.tryParse(teamId) ?? 0,
+      );
+    }
+    return null;
+  }
+
+  /// Clears the draft data from [EncryptedSharedPreferences].
+  void _clearDraft() {
+    _prefs.setString('draft_firstName', '');
+    _prefs.setString('draft_lastName', '');
+    _prefs.setString('draft_address', '');
+    _prefs.setString('draft_dob', '');
+    _prefs.setString('draft_teamId', '');
   }
 
   /// Adds a new player to the database from the tablet-mode inline form.
@@ -162,17 +254,23 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
       );
       await _playerDao.insertPlayer(player);
       _saveToPrefs();
+      _clearDraft();
       _clearFields();
-      _loadPlayers();
-      _showSnackbar(AppLocalizations.of(context)!.translate('player_added'));
+      await _loadPlayers();
+      if (mounted) {
+        _showSnackbar(AppLocalizations.of(context)!.translate('player_added'));
+      }
     }
   }
 
   /// Updates an existing player's information in the database.
   Future<void> _updatePlayer(Player player) async {
     await _playerDao.updatePlayer(player);
-    _loadPlayers();
-    _showSnackbar(AppLocalizations.of(context)!.translate('player_updated'));
+    _clearDraft();
+    await _loadPlayers();
+    if (mounted) {
+      _showSnackbar(AppLocalizations.of(context)!.translate('player_updated'));
+    }
   }
 
   /// Deletes a player from the database and list.
@@ -180,8 +278,10 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
     await _playerDao.deletePlayer(player);
     _selectedPlayer = null;
     _clearFields();
-    _loadPlayers();
-    _showSnackbar(AppLocalizations.of(context)!.translate('player_deleted'));
+    await _loadPlayers();
+    if (mounted) {
+      _showSnackbar(AppLocalizations.of(context)!.translate('player_deleted'));
+    }
   }
 
   /// Validates that all form fields are not empty and team ID is a valid number.

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:encrypt_shared_preferences/provider.dart';
 import '../models/player.dart';
 import '../localization.dart';
 
@@ -10,6 +11,10 @@ import '../localization.dart';
 class PlayerDetailsPage extends StatefulWidget {
   /// The player to display details for. Null means "add new player" mode.
   final Player? player;
+
+  /// Optional data to pre-fill the form with when in "add new" mode,
+  /// used for the "copy from previous player" feature.
+  final Player? prefillData;
 
   /// Callback function when a new player is added.
   final Function(Player)? onAdd;
@@ -24,6 +29,7 @@ class PlayerDetailsPage extends StatefulWidget {
   const PlayerDetailsPage({
     super.key,
     this.player,
+    this.prefillData,
     this.onAdd,
     this.onUpdate,
     this.onDelete,
@@ -35,6 +41,9 @@ class PlayerDetailsPage extends StatefulWidget {
 
 /// The state for [PlayerDetailsPage].
 class _PlayerDetailsPageState extends State<PlayerDetailsPage> {
+  /// Instance of [EncryptedSharedPreferences] to store draft data.
+  late EncryptedSharedPreferences _prefs;
+
   /// Controller for the first name field.
   late TextEditingController _firstNameController;
 
@@ -56,12 +65,43 @@ class _PlayerDetailsPageState extends State<PlayerDetailsPage> {
   @override
   void initState() {
     super.initState();
-    // Pre-populate controllers with the player's current data, or blank if adding.
-    _firstNameController = TextEditingController(text: widget.player?.firstName ?? '');
-    _lastNameController = TextEditingController(text: widget.player?.lastName ?? '');
-    _addressController = TextEditingController(text: widget.player?.address ?? '');
-    _dobController = TextEditingController(text: widget.player?.dateOfBirth ?? '');
-    _teamIdController = TextEditingController(text: widget.player?.teamId.toString() ?? '');
+    _prefs = EncryptedSharedPreferences.getInstance();
+
+    // In edit mode, pre-populate with the existing player's data.
+    // In add mode, pre-populate with prefillData if provided (copy-previous feature),
+    // otherwise load from encrypted shared preferences if a draft exists.
+    final source = widget.player ?? widget.prefillData;
+
+    String initialFirstName = source?.firstName ?? '';
+    String initialLastName = source?.lastName ?? '';
+    String initialAddress = source?.address ?? '';
+    String initialDob = source?.dateOfBirth ?? '';
+    String initialTeamId = source?.teamId.toString() ?? '';
+
+    if (_isAddMode && widget.prefillData == null) {
+      initialFirstName = _prefs.getString('draft_firstName') ?? '';
+      initialLastName = _prefs.getString('draft_lastName') ?? '';
+      initialAddress = _prefs.getString('draft_address') ?? '';
+      initialDob = _prefs.getString('draft_dob') ?? '';
+      initialTeamId = _prefs.getString('draft_teamId') ?? '';
+    }
+
+    _firstNameController = TextEditingController(text: initialFirstName);
+    _lastNameController = TextEditingController(text: initialLastName);
+    _addressController = TextEditingController(text: initialAddress);
+    _dobController = TextEditingController(text: initialDob);
+    _teamIdController = TextEditingController(text: initialTeamId);
+
+    // Add listeners to save changes to encrypted shared preferences as the user types.
+    // Only save to draft if we are in "add new player" mode, to avoid overwriting 
+    // the draft when simply viewing or editing an existing player.
+    if (_isAddMode) {
+      _firstNameController.addListener(() => _prefs.setString('draft_firstName', _firstNameController.text));
+      _lastNameController.addListener(() => _prefs.setString('draft_lastName', _lastNameController.text));
+      _addressController.addListener(() => _prefs.setString('draft_address', _addressController.text));
+      _dobController.addListener(() => _prefs.setString('draft_dob', _dobController.text));
+      _teamIdController.addListener(() => _prefs.setString('draft_teamId', _teamIdController.text));
+    }
   }
 
   @override
@@ -73,6 +113,15 @@ class _PlayerDetailsPageState extends State<PlayerDetailsPage> {
     _dobController.dispose();
     _teamIdController.dispose();
     super.dispose();
+  }
+
+  /// Clears the draft data from [EncryptedSharedPreferences].
+  void _clearDraft() {
+    _prefs.setString('draft_firstName', '');
+    _prefs.setString('draft_lastName', '');
+    _prefs.setString('draft_address', '');
+    _prefs.setString('draft_dob', '');
+    _prefs.setString('draft_teamId', '');
   }
 
   /// Validates that all fields are filled and the team ID is a valid number.
@@ -151,6 +200,7 @@ class _PlayerDetailsPageState extends State<PlayerDetailsPage> {
                         dateOfBirth: _dobController.text,
                         teamId: int.tryParse(_teamIdController.text) ?? 0,
                       );
+                      _clearDraft();
                       widget.onAdd?.call(newPlayer);
                     }
                   },
@@ -171,6 +221,7 @@ class _PlayerDetailsPageState extends State<PlayerDetailsPage> {
                             dateOfBirth: _dobController.text,
                             teamId: int.tryParse(_teamIdController.text) ?? widget.player!.teamId,
                           );
+                          _clearDraft();
                           widget.onUpdate?.call(updated);
                         }
                       },
