@@ -1,4 +1,3 @@
-
 import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -241,60 +240,93 @@ class OtherPageState extends State<OtherPage> {
   }
 
   alter() {
-    return SingleChildScrollView( // <--- Added return and SingleChildScrollView to prevent overflow
+    return SingleChildScrollView(
       child: Column(
         children: [
-          TextField(controller: _controller1, decoration: InputDecoration(labelText: "date")),
+          TextField(controller: _controller1, decoration: const InputDecoration(labelText: "date")),
+          TextField(controller: _controller2, decoration: const InputDecoration(labelText: "Stadium ID number")),
+          TextField(controller: _controller3, decoration: const InputDecoration(labelText: "Team 1 ID number")),
+          TextField(controller: _controller4, decoration: const InputDecoration(labelText: "Team 2 ID number")),
 
-          TextField(controller: _controller2, decoration: InputDecoration(labelText: "Stadium ID number")),
-          TextField(controller: _controller3, decoration: InputDecoration(labelText: "Team 1 ID number")),
-          TextField(controller: _controller4, decoration: InputDecoration(labelText: "Team 2 ID number")),
+          // --- UPDATE BUTTON ---
           ElevatedButton(
-            onPressed: () {
-              if (
-              _controller1.value.text.isEmpty ||
-                  _controller2.value.text.isEmpty ||
-                  _controller3.value.text.isEmpty ||
-                  _controller4.value.text.isEmpty
-              ) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error')));
+            onPressed: () async {
+              // Trim inputs to prevent whitespace-only saves
+              if (_controller1.text.trim().isEmpty ||
+                  _controller2.text.trim().isEmpty ||
+                  _controller3.text.trim().isEmpty ||
+                  _controller4.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Error: All fields are required')),
+                );
+                return;
+              }
+
+              // 1. Add data to global runtime lists
+              DataRepository.date.add(_controller1.text);
+              DataRepository.StadiumIDnumber.add(_controller2.text);
+              DataRepository.team1IDnumber.add(_controller3.text);
+              DataRepository.team2IDnumber.add(_controller4.text);
+              DataRepository.count++;
+
+              // 2. Safely sync the entire string lists to disk storage
+              final sharedPrefs = await SharedPreferences.getInstance();
+              await sharedPrefs.setStringList("date", DataRepository.date);
+              await sharedPrefs.setStringList("StadiumIDnumber", DataRepository.StadiumIDnumber);
+              await sharedPrefs.setStringList("team1IDnumber", DataRepository.team1IDnumber);
+              await sharedPrefs.setStringList("team2IDnumber", DataRepository.team2IDnumber);
+
+              // 3. Return to the list view safely
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text("update"),
+          ),
+
+          // --- REMOVE BUTTON ---
+          ElevatedButton(
+            onPressed: () async {
+              final int indexToRemove = DataRepository.count1;
+
+              // Strict safety check: Ensure the index is valid across ALL 4 lists
+              bool isIndexValid = indexToRemove >= 0 &&
+                  indexToRemove < DataRepository.date.length &&
+                  indexToRemove < DataRepository.StadiumIDnumber.length &&
+                  indexToRemove < DataRepository.team1IDnumber.length &&
+                  indexToRemove < DataRepository.team2IDnumber.length;
+
+              if (isIndexValid) {
+                // 1. Remove from runtime memory lists
+                DataRepository.date.removeAt(indexToRemove);
+                DataRepository.StadiumIDnumber.removeAt(indexToRemove);
+                DataRepository.team1IDnumber.removeAt(indexToRemove);
+                DataRepository.team2IDnumber.removeAt(indexToRemove);
+
+                // Recalculate your global counter safely
+                DataRepository.count = DataRepository.date.length;
+
+                // 2. Persist the newly shortened lists to storage
+                final sharedPrefs = await SharedPreferences.getInstance();
+                await sharedPrefs.setStringList("date", DataRepository.date);
+                await sharedPrefs.setStringList("StadiumIDnumber", DataRepository.StadiumIDnumber);
+                await sharedPrefs.setStringList("team1IDnumber", DataRepository.team1IDnumber);
+                await sharedPrefs.setStringList("team2IDnumber", DataRepository.team2IDnumber);
+
+                // 3. Return to the previous screen safely
+                if (context.mounted) Navigator.pop(context);
               } else {
-                DataRepository.date.add(_controller1.text);
-                SharedPreferences.getInstance().then( (sharedPrefs) {
-                  sharedPrefs.setString("date", _controller1.text);
-                } );
-                DataRepository.StadiumIDnumber.add(_controller2.text);
-                SharedPreferences.getInstance().then( (sharedPrefs) {
-                  sharedPrefs.setString("StadiumIDnumber", _controller2.text);
-                } );
-                DataRepository.team1IDnumber.add(_controller3.text);
-                SharedPreferences.getInstance().then( (sharedPrefs) {
-                  sharedPrefs.setString("team1IDnumber", _controller3.text);
-                } );
-                DataRepository.team2IDnumber.add(_controller4.text);
-                SharedPreferences.getInstance().then( (sharedPrefs) {
-                  sharedPrefs.setString("team2IDnumber", _controller4.text);
-                } );
-                DataRepository.count++;
-                Navigator.pushNamed(context, "/");
+                // Gracefully handle error visually instead of crashing
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Cannot remove: Index $indexToRemove is out of bounds.')),
+                );
               }
             },
-            child: Text("update"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              DataRepository.date.removeAt(DataRepository.count1);
-              DataRepository.StadiumIDnumber.removeAt(DataRepository.count1);
-              DataRepository.team1IDnumber.removeAt(DataRepository.count1);
-              DataRepository.team2IDnumber.removeAt(DataRepository.count1);
-              Navigator.pushNamed(context, "/");
-            },
-            child: Text("remove"),
+            child: const Text("remove"),
           )
         ],
       ),
     );
   }
+
 }
 class DataRepository{
   static int count =0;
