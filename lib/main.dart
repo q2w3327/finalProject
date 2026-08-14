@@ -1,148 +1,310 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:encrypt_shared_preferences/provider.dart';
-import 'localization.dart';
-import 'pages/soccer_team_list_page.dart';
-import 'pages/soccer_player_list_page.dart';
 
-/// The entry point of the application.
-/// 
-/// Initializes the Flutter bindings and the [EncryptedSharedPreferences]
-/// with a secret key before running the app.
-void main() async {
-  // Ensure that plugin services are initialized so that `EncryptedSharedPreferences` 
-  // can be used before `runApp`.
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize the encrypted preferences with a secret key for security.
-  await EncryptedSharedPreferences.initialize("secret_key_123456");
-  
+import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
   runApp(const MyApp());
 }
 
-/// The root widget of the application.
-/// 
-/// Manages the global [Locale] and sets up the [MaterialApp] with 
-/// localization and theme.
-class MyApp extends StatefulWidget {
-  /// Creates a new [MyApp] instance.
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-/// The state for [MyApp].
-class _MyAppState extends State<MyApp> {
-  /// The current locale of the application. Defaults to US English.
-  Locale _locale = const Locale('en', 'US');
-
-  /// Updates the application's locale.
-  /// 
-  /// This method is called by child widgets to switch the language.
-  void changeLanguage(Locale locale) {
-    setState(() {
-      _locale = locale;
-    });
-  }
-
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Final Project',
+
+      title: 'Named Routes Demo',
+      initialRoute: '/',
+      routes: {
+
+        '/gameOtherPage': (context) => OtherPage(),
+      },
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "hot reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during the reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      // Set the current locale.
-      locale: _locale,
-      // Define localization delegates to handle translations.
-      localizationsDelegates: const [
-        AppLocalizationsDelegate(),
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      // List the supported locales for the app.
-      supportedLocales: const [
-        Locale('en', 'US'),
-        Locale('fr', 'FR'),
-      ],
-      // The initial page shown to the user.
-      home: MainLandingPage(onChangeLanguage: changeLanguage),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-/// The landing page of the entire application.
-/// 
-/// Contains buttons to navigate to the four different project topics.
-class MainLandingPage extends StatelessWidget {
-  /// Callback function to change the application language.
-  final Function(Locale) onChangeLanguage;
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key, required this.title});
 
-  /// Creates a new [MainLandingPage] instance.
-  const MainLandingPage({super.key, required this.onChangeLanguage});
+  // This widget is the home page of your application. It is stateful, meaning
+  // that it has a State object (defined below) that contains fields that affect
+  // how it looks.
+
+  // This class is the configuration for the state. It holds the values (in this
+  // case the title) provided by the parent (in this case the App widget) and
+  // used by the build method of the State. Fields in a Widget subclass are
+  // always marked "final".
+
+  final String title;
 
   @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+class _MyHomePageState extends State<MyHomePage> {
+  
+  @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    // This method is rerun every time setState is called, for instance as done
+    // by the _incrementCounter method above.
+    //
+    // The Flutter framework has been optimized to make rerunning build methods
+    // fast, so that you can just rebuild anything that needs updating rather
+    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.translate('app_title')),
-        actions: [
-          // Language selector in the AppBar.
-          PopupMenuButton<Locale>(
-            onSelected: onChangeLanguage,
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: Locale('en', 'US'),
-                child: Text('English (US)'),
-              ),
-              const PopupMenuItem(
-                value: Locale('fr', 'FR'),
-                child: Text('Français'),
-              ),
-            ],
-            icon: const Icon(Icons.language),
-          ),
-        ],
+        // TRY THIS: Try changing the color here to a specific color (to
+        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
+        // change color while the other colors stay the same.
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        // Here we take the value from the MyHomePage object that was created by
+        // the App.build method, and use it to set our appbar title.
+        title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Button for the Soccer Player Page.
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SoccerPlayerListPage()),
-                );
-              },
-              child: Text(l10n.translate('home_player_button')),
-            ),
-            const SizedBox(height: 10),
-            // Button to navigate to the Soccer Team List Page.
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SoccerTeamListPage()),
-                );
-              },
-              child: Text(l10n.translate('home_team_button')),
-            ),
-            const SizedBox(height: 10),
-            // Button for the Soccer Game List Page (Placeholder).
-            ElevatedButton(
-              onPressed: () {},
-              child: Text(l10n.translate('home_game_button')),
-            ),
-          ],
+      body: ListPage(),
+
+      );
+  }
+  Widget ListPage() {
+    return Column(
+      children: [
+        ElevatedButton(
+          child: Text("Add item"),
+          onPressed: () {
+            DataRepository.trigger = false;
+            Navigator.pushNamed(context, "/gameOtherPage");
+          },
         ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: DataRepository.count,
+            itemBuilder: (context, rowNum) {
+              return GestureDetector(
+                onTap: () {
+                  DataRepository.trigger = true;
+                  DataRepository.count1 = rowNum;
+                  Navigator.pushNamed(context, "/gameOtherPage");
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("date:" + DataRepository.date[rowNum]),
+                    Text("Stadium:" + DataRepository.StadiumIDnumber[rowNum]),
+                    Text("Team 1:" + DataRepository.StadiumIDnumber[rowNum]),
+                    Text("Team 2:" + DataRepository.StadiumIDnumber[rowNum]),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+class OtherPage extends StatefulWidget {
+  @override
+  State<OtherPage> createState() => OtherPageState();
+}
+class OtherPageState extends State<OtherPage> {
+  late TextEditingController _controller1;
+  late TextEditingController _controller2;
+  late TextEditingController _controller3;
+  late TextEditingController _controller4;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(body: DataRepository.trigger
+        ? alter()
+        : add(),
+    /*
+    (Column(children: [TextField(controller: _controller1, decoration: InputDecoration(labelText: "date"))
+      ,TextField(controller: _controller2, decoration: InputDecoration(labelText: "Stadium ID number")),
+      TextField(controller: _controller3, decoration: InputDecoration(labelText: "Team 1 ID number")),
+      TextField(controller: _controller4, decoration: InputDecoration(labelText: "Team 2 ID number")),
+      ElevatedButton(
+        onPressed: () {
+          if(
+              _controller1.value.text.isEmpty ||
+              _controller2.value.text.isEmpty ||
+              _controller3.value.text.isEmpty ||
+              _controller4.value.text.isEmpty
+          ){
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar (content: Text('Error')));
+          }else{
+            DataRepository.date[DataRepository.count] = _controller1.value.text;
+            DataRepository.StadiumIDnumber[DataRepository.count] = _controller2.value.text;
+            DataRepository.team1IDnumber[DataRepository.count] = _controller3.value.text;
+            DataRepository.team2IDnumber[DataRepository.count] = _controller4.value.text;
+            DataRepository.count++;
+            Navigator.pushNamed(context,"/" );
+        };
+
+          }, //  <--- Lambda function
+        child:Text("submit"),
+      )
+    ],
+    )
+    )
+    );
+     */
+     //Use a Scaffold to layout a page with an AppBar and main body region
+    );
+  }
+  List<String> words =  [] ;
+  @override
+  void initState() {
+    super.initState();
+    _controller1 = TextEditingController();
+    _controller2 = TextEditingController();
+    _controller3 = TextEditingController();
+    _controller4 = TextEditingController();
+    if(DataRepository.trigger){
+      _controller1.text = DataRepository.date[DataRepository.count1];
+      _controller2.text = DataRepository.StadiumIDnumber[DataRepository.count1];
+      _controller3.text = DataRepository.team1IDnumber[DataRepository.count1];
+      _controller4.text = DataRepository.team2IDnumber[DataRepository.count1];
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller1.dispose();
+    _controller2.dispose();
+    _controller3.dispose();
+    _controller4.dispose();
+    super.dispose();
+  }
+
+  Widget add() { // Fixed: Changed return type to Widget for clarity
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          TextField(controller: _controller1, decoration: InputDecoration(labelText: "date")),
+          TextField(controller: _controller2, decoration: InputDecoration(labelText: "Stadium ID number")),
+          TextField(controller: _controller3, decoration: InputDecoration(labelText: "Team 1 ID number")),
+          TextField(controller: _controller4, decoration: InputDecoration(labelText: "Team 2 ID number")),
+          ElevatedButton(
+            onPressed: () {
+              if (_controller1.text.isEmpty ||
+                  _controller2.text.isEmpty ||
+                  _controller3.text.isEmpty ||
+                  _controller4.text.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error')));
+              } else {
+                DataRepository.date.add(_controller1.text);
+                SharedPreferences.getInstance().then( (sharedPrefs) {
+                  sharedPrefs.setString("date", _controller1.text);
+                } );
+                DataRepository.StadiumIDnumber.add(_controller2.text);
+                SharedPreferences.getInstance().then( (sharedPrefs) {
+                  sharedPrefs.setString("StadiumIDnumber", _controller2.text);
+                } );
+                DataRepository.team1IDnumber.add(_controller3.text);
+                SharedPreferences.getInstance().then( (sharedPrefs) {
+                  sharedPrefs.setString("team1IDnumber", _controller3.text);
+                } );
+                DataRepository.team2IDnumber.add(_controller4.text);
+                SharedPreferences.getInstance().then( (sharedPrefs) {
+                  sharedPrefs.setString("team2IDnumber", _controller4.text);
+                } );
+
+                DataRepository.count++;
+
+                // Return to the home screen
+                Navigator.pushNamed(context, "/");
+              }
+            },
+            child: Text("submit"),
+          )
+        ],
       ),
     );
   }
+
+  alter() {
+    return SingleChildScrollView( // <--- Added return and SingleChildScrollView to prevent overflow
+      child: Column(
+        children: [
+          TextField(controller: _controller1, decoration: InputDecoration(labelText: "date")),
+
+          TextField(controller: _controller2, decoration: InputDecoration(labelText: "Stadium ID number")),
+          TextField(controller: _controller3, decoration: InputDecoration(labelText: "Team 1 ID number")),
+          TextField(controller: _controller4, decoration: InputDecoration(labelText: "Team 2 ID number")),
+          ElevatedButton(
+            onPressed: () {
+              if (
+              _controller1.value.text.isEmpty ||
+                  _controller2.value.text.isEmpty ||
+                  _controller3.value.text.isEmpty ||
+                  _controller4.value.text.isEmpty
+              ) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error')));
+              } else {
+                DataRepository.date.add(_controller1.text);
+                SharedPreferences.getInstance().then( (sharedPrefs) {
+                  sharedPrefs.setString("date", _controller1.text);
+                } );
+                DataRepository.StadiumIDnumber.add(_controller2.text);
+                SharedPreferences.getInstance().then( (sharedPrefs) {
+                  sharedPrefs.setString("StadiumIDnumber", _controller2.text);
+                } );
+                DataRepository.team1IDnumber.add(_controller3.text);
+                SharedPreferences.getInstance().then( (sharedPrefs) {
+                  sharedPrefs.setString("team1IDnumber", _controller3.text);
+                } );
+                DataRepository.team2IDnumber.add(_controller4.text);
+                SharedPreferences.getInstance().then( (sharedPrefs) {
+                  sharedPrefs.setString("team2IDnumber", _controller4.text);
+                } );
+                DataRepository.count++;
+                Navigator.pushNamed(context, "/");
+              }
+            },
+            child: Text("update"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              DataRepository.date.removeAt(DataRepository.count1);
+              DataRepository.StadiumIDnumber.removeAt(DataRepository.count1);
+              DataRepository.team1IDnumber.removeAt(DataRepository.count1);
+              DataRepository.team2IDnumber.removeAt(DataRepository.count1);
+              Navigator.pushNamed(context, "/");
+            },
+            child: Text("remove"),
+          )
+        ],
+      ),
+    );
+  }
+}
+class DataRepository{
+  static int count =0;
+  static List<String> date = [];
+  static List<String> StadiumIDnumber = [];
+  static List<String> team1IDnumber = [];
+  static List<String> team2IDnumber = [];
+  static int count1 =0;
+  static bool trigger = false;
+}
+void functionName() async {
+  final EncryptedSharedPreferences prefs = EncryptedSharedPreferences();
 }
