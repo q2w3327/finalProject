@@ -97,7 +97,7 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
 
   /// Initializes the Floor database and loads the players.
   Future<void> _initDatabase() async {
-    _database = await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+    _database = await AppDatabase.getDatabase();
     _playerDao = _database.playerDao;
     _loadPlayers();
   }
@@ -112,7 +112,7 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
   }
 
   /// Determines whether the current layout is phone-sized.
-  bool _isPhone() => MediaQuery.of(context).size.width < 600;
+  bool _isPhone() => MediaQuery.of(context).size.width < 900;
 
   /// Handles player selection from the ListView.
   ///
@@ -417,7 +417,7 @@ class _SoccerPlayerListPageState extends State<SoccerPlayerListPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     // Determine if we are on a tablet/desktop layout
-    final isTablet = MediaQuery.of(context).size.width >= 600;
+    final isTablet = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(
       appBar: AppBar(

@@ -14,7 +14,7 @@ part 'database.g.dart'; // the generated code will be here
 /// The application's database.
 /// 
 /// Contains the [TeamDao], [PlayerDao], and [GameDao].
-@Database(version: 1, entities: [Team, Player, Game])
+@Database(version: 2, entities: [Team, Player, Game])
 abstract class AppDatabase extends FloorDatabase {
   /// Provides access to the [TeamDao].
   TeamDao get teamDao;
@@ -22,4 +22,12 @@ abstract class AppDatabase extends FloorDatabase {
   PlayerDao get playerDao;
   /// Provides access to the [GameDao].
   GameDao get gameDao;
+
+  static AppDatabase? _instance;
+
+  /// Singleton access to the database to prevent multiple opening attempts.
+  static Future<AppDatabase> getDatabase() async {
+    _instance ??= await $FloorAppDatabase.databaseBuilder('app_database_v2.db').build();
+    return _instance!;
+  }
 }

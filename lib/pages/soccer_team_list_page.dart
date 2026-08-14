@@ -36,7 +36,7 @@ class _SoccerTeamListPageState extends State<SoccerTeamListPage> {
   }
 
   Future<void> _initDatabase() async {
-    _database = await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+    _database = await AppDatabase.getDatabase();
     _teamDao = _database.teamDao;
     _loadTeams();
   }
